@@ -30,6 +30,7 @@ pub fn main() !void {
     }
     const allocator = gpa.allocator();
     const data = try process_data(allocator);
+    defer allocator.free(data);
 
     const stdout = std.io.getStdOut();
     defer stdout.close();
@@ -41,6 +42,8 @@ pub fn main() !void {
 
 fn process_data(allocator: std.mem.Allocator) ![]const u8 {
     var map = Data.init(allocator);
+    defer map.deinit();
+
     try map.put("state", "one");
     try map.put("folder", "/this/is/a/test");
 
