@@ -22,10 +22,6 @@ pub fn getGpaConfig() std.heap.GeneralPurposeAllocatorConfig {
 }
 
 pub fn main() !void {
-    _ = try process_data();
-}
-
-fn process_data() ![]const u8 {
     const config = getGpaConfig();
     var gpa = std.heap.GeneralPurposeAllocator(config){};
     defer {
@@ -33,7 +29,17 @@ fn process_data() ![]const u8 {
         std.debug.print("Gpa check = {any}\n", .{check});
     }
     const allocator = gpa.allocator();
+    const data = try process_data(allocator);
 
+    const stdout = std.io.getStdOut();
+    defer stdout.close();
+
+    const writter = stdout.writer();
+
+    try writter.print("{s}\n", .{data});
+}
+
+fn process_data(allocator: std.mem.Allocator) ![]const u8 {
     var map = Data.init(allocator);
     try map.put("state", "one");
     try map.put("folder", "/this/is/a/test");
@@ -57,7 +63,7 @@ fn convert_to_json(allocator: std.mem.Allocator, data: *Data) ![]const u8 {
 }
 
 test "simple test" {
-    const string = try process_data();
+    const string = try process_data(std.testing.allocator);
 
     try std.testing.expect(std.mem.eql(u8, string, "{\"folder\":\"/this/is/a/test\",\"state\":\"one\"}"));
 }
