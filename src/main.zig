@@ -44,8 +44,17 @@ fn process_data(allocator: std.mem.Allocator) ![]const u8 {
     var map = Data.init(allocator);
     defer map.deinit();
 
-    try map.put("state", "one");
-    try map.put("folder", "/this/is/a/test");
+    // let's simulate that the string one and folder came from reading
+    // a file or something that allocate the string to memory
+    const one = try std.fmt.allocPrint(allocator, "{s}", .{"one"});
+    // In this case we are going to free
+    defer allocator.free(one);
+
+    const folder = try std.fmt.allocPrint(allocator, "{s}", .{"/this/is/a/test"});
+    defer allocator.free(folder);
+
+    try map.put("state", one);
+    try map.put("folder", folder);
 
     return try convert_to_json(allocator, &map);
 }
@@ -67,6 +76,7 @@ fn convert_to_json(allocator: std.mem.Allocator, data: *Data) ![]const u8 {
 
 test "simple test" {
     const string = try process_data(std.testing.allocator);
+    defer std.testing.allocator.free(string);
 
     try std.testing.expect(std.mem.eql(u8, string, "{\"folder\":\"/this/is/a/test\",\"state\":\"one\"}"));
 }
